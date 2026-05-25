@@ -289,3 +289,5 @@ export interface InterServerEvents { }
 export interface SocketData {
     clientType?: ClientType;
 }
+
+export * from './types';

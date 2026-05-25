@@ -1,24 +1,26 @@
 {
-    "name": "@hundekuchenlive/server",
+    "name": "@hundekuchenlive/eventsub",
     "version": "0.1.0",
     "private": true,
     "type": "module",
     "scripts": {
+        "start": "node --loader ts-node/esm src/index.ts",
         "dev": "tsx watch src/index.ts",
-        "start": "node dist/index.js",
         "build": "tsc",
         "lint": "eslint src/**/*.ts"
     },
     "dependencies": {
         "@hundekuchenlive/shared": "workspace:*",
-        "fastify": "^4.25.0",
-        "@fastify/cors": "^8.5.0",
-        "@fastify/static": "^6.12.0",
-        "@fastify/websocket": "^8.3.0",
-        "dotenv": "^16.4.0"
+        "@twurple/api": "^7.0.0",
+        "@twurple/auth": "^7.0.0",
+        "@twurple/eventsub-ws": "^7.0.0",
+        "dotenv": "^16.4.0",
+        "ws": "^8.16.0",
+        "zod": "^3.22.4"
     },
     "devDependencies": {
         "@types/node": "^20.11.0",
+        "@types/ws": "^8.5.10",
         "tsx": "^4.7.0",
         "typescript": "^5.3.3"
     }
