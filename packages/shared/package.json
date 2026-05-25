@@ -1,0 +1,13 @@
+{
+    "name": "@hundekuchen/shared",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "types": "./src/index.ts",
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "tsc --noEmit"
+    }
+}

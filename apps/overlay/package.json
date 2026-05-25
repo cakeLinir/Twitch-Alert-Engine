@@ -1,0 +1,22 @@
+{
+    "name": "@hundekuchen/overlay",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite --host 127.0.0.1 --port 5174",
+        "typecheck": "tsc --noEmit",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.15",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.2",
+        "vite": "^8.0.13"
+    },
+    "dependencies": {
+        "@hundekuchen/shared": "workspace:*",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
+        "socket.io-client": "^4.8.3"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "name": "@hundekuchen/server",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/main.ts",
+        "typecheck": "tsc --noEmit",
+        "build": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@fastify/cors": "^11.2.0",
+        "@fastify/static": "^9.1.3",
+        "@hundekuchen/config": "workspace:*",
+        "@hundekuchen/logger": "workspace:*",
+        "@hundekuchen/shared": "workspace:*",
+        "fastify": "^5.8.5",
+        "socket.io": "^4.8.3"
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "name": "@hundekuchen/config",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "types": "./src/index.ts",
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "tsc --noEmit"
+    },
+    "dependencies": {
+        "zod": "^4.4.3"
+    }
+}
