@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.DS_Store
+
+data/sqlite/*.db
+data/sqlite/*.db-wal
+data/sqlite/*.db-shm
+
+data/logs/*.log
