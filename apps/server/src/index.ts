@@ -16,13 +16,24 @@ const logger = new Logger('Server');
 const app = express();
 const httpServer = createServer(app);
 
+// Helmet mit entschärften Einstellungen für OBS
 app.use(helmet({
-  contentSecurityPolicy: false
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "ws:", "wss:", "data:", "blob:"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      connectSrc: ["'self'", "ws:", "wss:", "*"],
+      imgSrc: ["'self'", "data:", "https:", "*"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      fontSrc: ["'self'", "data:"],
+      frameSrc: ["'self'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false
 }));
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://hundekuchenlive.de']
-    : '*',
+  origin: '*',
   credentials: true
 }));
 app.use(express.json());
@@ -33,8 +44,17 @@ app.use('/api/', rateLimit({
   max: 100
 }));
 
-app.use('/assets', express.static('../../data/assets'));
-app.use('/overlay', express.static('../overlay/dist'));
+// Static files - korrekte Pfade fuer Windows
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+app.use('/assets', express.static(join(__dirname, '..', '..', '..', 'data', 'assets')));
+
+// Overlay aus dem gebauten dist Ordner
+app.use('/overlay', express.static(join(__dirname, '..', '..', 'overlay', 'dist')));
 
 app.use('/api/donations', donationRoutes);
 app.use('/webhooks', webhookRoutes);
@@ -53,7 +73,7 @@ new AlertServer(wss);
 process.on('SIGTERM', async () => {
   logger.info('Shutting down...');
   httpServer.close(() => {
-    logger.exit(0);
+    process.exit(0);
   });
 });
 

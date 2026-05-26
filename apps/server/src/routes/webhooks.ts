@@ -4,7 +4,7 @@ import { Logger } from '@twitch-alert/utils';
 const logger = new Logger('Webhooks');
 const router: Router = Router();
 
-router.post('/stripe', raw({ type: 'application/json' }), async (req: Request, res: Response) => {
+router.post('/stripe', raw({ type: 'application/json' }), async (_req: Request, res: Response) => {
   try {
     logger.info('Stripe webhook received');
     res.json({ received: true });
