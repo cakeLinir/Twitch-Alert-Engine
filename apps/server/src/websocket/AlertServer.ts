@@ -5,11 +5,12 @@ import type {
   ServerToClientEvents, 
   ClientToServerEvents 
 } from '@twitch-alert/types';
+import { IncomingMessage } from 'http';
 
 interface ConnectedClient {
   id: string;
   ws: WebSocket;
-  type: 'overlay' | 'dashboard' | 'unknown';
+  type: 'overlay' | 'dashboard' | 'other';
   connectedAt: Date;
 }
 
@@ -60,11 +61,15 @@ export class AlertServer {
     });
   }
 
-  private detectClientType(req: any): ConnectedClient['type'] {
+  private detectClientType(req: IncomingMessage): ConnectedClient['type'] {
+    const url = req.url || '';
+    if (url.includes('type=overlay')) return 'overlay';
+    if (url.includes('type=dashboard')) return 'dashboard';
+    
     const userAgent = req.headers['user-agent'] || '';
     if (userAgent.includes('OBS')) return 'overlay';
-    if (userAgent.includes('dashboard')) return 'dashboard';
-    return 'unknown';
+    
+    return 'overlay';
   }
 
   private handleMessage(data: RawData): void {
