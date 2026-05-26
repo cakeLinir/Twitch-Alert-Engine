@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitch Alert Overlay - hundekuchenlive</title>
-    <link rel="stylesheet" href="./src/styles/main.css">
+    <link rel="stylesheet" href="./src/styles/overlay.css">
 </head>
 
 <body>
     <div id="alert-container" class="alert-container"></div>
-
-    <!-- OBS Browser Source URL: http://localhost:3000/overlay -->
-    <!-- Oder direkt diese Datei im Dev-Modus -->
+    <div id="debug-info" class="debug-info" style="display: none;">
+        WebSocket: <span id="ws-status">Connecting...</span>
+    </div>
 
     <script type="module" src="./src/main.ts"></script>
 </body>

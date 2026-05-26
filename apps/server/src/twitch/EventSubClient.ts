@@ -201,19 +201,19 @@ export class TwitchEventSubClient {
 
         switch (subscription.type) {
             case 'channel.follow':
-                await this.handleFollowEvent(event as ChannelFollowEvent);
+                await this.handleFollowEvent(event as unknown as ChannelFollowEvent);
                 break;
             case 'channel.subscribe':
-                await this.handleSubscribeEvent(event as ChannelSubscribeEvent);
+                await this.handleSubscribeEvent(event as unknown as ChannelSubscribeEvent);
                 break;
             case 'channel.subscription.gift':
-                await this.handleSubscriptionGiftEvent(event as ChannelSubscriptionGiftEvent);
+                await this.handleSubscriptionGiftEvent(event as unknown as ChannelSubscriptionGiftEvent);
                 break;
             case 'channel.cheer':
-                await this.handleCheerEvent(event as ChannelCheerEvent);
+                await this.handleCheerEvent(event as unknown as ChannelCheerEvent);
                 break;
             case 'channel.raid':
-                await this.handleRaidEvent(event as ChannelRaidEvent);
+                await this.handleRaidEvent(event as unknown as ChannelRaidEvent);
                 break;
         }
     }

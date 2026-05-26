@@ -1,16 +1,16 @@
 {
-    "name": "@hundekuchen/config",
+    "name": "@twitch-alert/config",
+    "version": "1.0.0",
     "private": true,
     "type": "module",
+    "main": "./eslint-preset.js",
     "exports": {
-        ".": "./src/index.ts"
+        "./eslint-preset": "./eslint-preset.js",
+        "./tsconfig-base": "./tsconfig-base.json"
     },
-    "types": "./src/index.ts",
-    "scripts": {
-        "typecheck": "tsc --noEmit",
-        "build": "tsc --noEmit"
-    },
-    "dependencies": {
-        "zod": "^4.4.3"
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^6.19.0",
+        "@typescript-eslint/parser": "^6.19.0",
+        "eslint-config-prettier": "^9.1.0"
     }
 }
