@@ -2,11 +2,11 @@ node_modules
 dist
 .env
 .DS_Store
-.mp4
-.mp3
-.mkv
-.jpg
-.png
+apps/overlay/src/assets/videos/sample.mp4
+apps/overlay/src/assets/sounds/sample.mp3
+apps/overlay/src/assets/videos/sample.mkv
+apps/overlay/src/assets/images/sample.jpg
+apps/overlay/src/assets/images/sample.png
 
 data/sqlite/*.db
 data/sqlite/*.db-wal
