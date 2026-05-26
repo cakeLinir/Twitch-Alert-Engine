@@ -43,17 +43,19 @@ app.use(morgan('dev'));
 
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
-// Alert Assets (Sounds, etc.)
-app.use('/assets', express.static(join(__dirname, '..', '..', '..', 'data', 'assets')));
+// WICHTIG: Overlay Assets MUESSEN auch unter /assets erreichbar sein
+// weil Vite absolute Pfade generiert
+const overlayDistPath = join(__dirname, '..', '..', 'overlay', 'dist');
+app.use('/assets', express.static(join(overlayDistPath, 'assets')));
+app.use('/overlay', express.static(overlayDistPath));
 
-// Overlay - aus dem dist Ordner
-const overlayPath = join(__dirname, '..', '..', 'overlay', 'dist');
-app.use('/overlay', express.static(overlayPath));
-
-// Overlay root redirect
+// Overlay root
 app.get('/overlay', (req, res) => {
-  res.sendFile(join(overlayPath, 'index.html'));
+  res.sendFile(join(overlayDistPath, 'index.html'));
 });
+
+// Data assets (Sounds, etc.)
+app.use('/data-assets', express.static(join(__dirname, '..', '..', '..', 'data', 'assets')));
 
 app.use('/api/donations', donationRoutes);
 app.use('/webhooks', webhookRoutes);
