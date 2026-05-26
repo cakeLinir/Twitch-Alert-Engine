@@ -11,12 +11,17 @@ import { AlertServer } from './websocket/AlertServer.js';
 import { donationRoutes } from './routes/donations.js';
 import { webhookRoutes } from './routes/webhooks.js';
 import { configRoutes } from './routes/config.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 const logger = new Logger('Server');
 const app = express();
 const httpServer = createServer(app);
 
-// Helmet mit entschärften Einstellungen für OBS
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Helmet mit entschaerften Einstellungen
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -32,39 +37,30 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-app.use(cors({
-  origin: '*',
-  credentials: true
-}));
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.use('/api/', rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
-}));
+app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
-// Static files - korrekte Pfade fuer Windows
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
+// Alert Assets (Sounds, etc.)
 app.use('/assets', express.static(join(__dirname, '..', '..', '..', 'data', 'assets')));
 
-// Overlay aus dem gebauten dist Ordner
-app.use('/overlay', express.static(join(__dirname, '..', '..', 'overlay', 'dist')));
+// Overlay - aus dem dist Ordner
+const overlayPath = join(__dirname, '..', '..', 'overlay', 'dist');
+app.use('/overlay', express.static(overlayPath));
+
+// Overlay root redirect
+app.get('/overlay', (req, res) => {
+  res.sendFile(join(overlayPath, 'index.html'));
+});
 
 app.use('/api/donations', donationRoutes);
 app.use('/webhooks', webhookRoutes);
 app.use('/api/config', configRoutes);
 
 app.get('/health', (_req: Request, res: Response) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
@@ -72,9 +68,7 @@ new AlertServer(wss);
 
 process.on('SIGTERM', async () => {
   logger.info('Shutting down...');
-  httpServer.close(() => {
-    process.exit(0);
-  });
+  httpServer.close(() => process.exit(0));
 });
 
 const PORT = parseInt(process.env.SERVER_PORT || '3000', 10);
@@ -82,7 +76,6 @@ const PORT = parseInt(process.env.SERVER_PORT || '3000', 10);
 httpServer.listen(PORT, () => {
   logger.info('=======================================');
   logger.info('🚀 Twitch Alert Engine gestartet!');
-  logger.info('=======================================');
   logger.info(`📡 Server: http://localhost:${PORT}`);
   logger.info(`📡 WebSocket: ws://localhost:${PORT}/ws`);
   logger.info(`🎨 Overlay: http://localhost:${PORT}/overlay`);
