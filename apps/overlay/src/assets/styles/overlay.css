@@ -204,3 +204,17 @@ body {
         transform: scale(0.9) translateY(-20px);
     }
 }
+
+/* Alert Video */
+.alert-video {
+    width: 100%;
+    max-width: 600px;
+    display: block;
+    border-radius: 8px;
+}
+
+/* Text unter dem Video */
+.alert-text {
+    text-align: center;
+    margin-top: 8px;
+}

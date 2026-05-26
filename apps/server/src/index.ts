@@ -50,7 +50,7 @@ app.use('/assets', express.static(join(overlayDistPath, 'assets')));
 app.use('/overlay', express.static(overlayDistPath));
 
 // Overlay root
-app.get('/overlay', (req, res) => {
+app.get('/overlay', (_req, res) => {
   res.sendFile(join(overlayDistPath, 'index.html'));
 });
 

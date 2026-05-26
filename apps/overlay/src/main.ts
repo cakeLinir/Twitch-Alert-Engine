@@ -1,4 +1,11 @@
-﻿import './styles/overlay.css';
+﻿// Korrekter Pfad zur CSS-Datei
+import './assets/styles/overlay.css';
+
+// Video-Assets über Vite importieren (gibt korrekte gehashte URLs zurück)
+import followerVideoUrl from './assets/video/Alert_Follower.mp4';
+import subscriberVideoUrl from './assets/video/Alert_Subscriber.mp4';
+import raidVideoUrl from './assets/video/Alert_Raid.mp4';
+import donationVideoUrl from './assets/video/Alert_Donation.mp4';
 
 interface AlertData {
   id: string;
@@ -25,19 +32,19 @@ class AlertOverlay {
   private maxReconnectAttempts = 10;
   private reconnectDelay = 3000;
 
-  private alertConfigs: Record<AlertData['type'], { duration: number; sound: string }> = {
-    follow: { duration: 5000, sound: 'follow.mp3' },
-    subscribe: { duration: 7000, sound: 'sub.mp3' },
-    sub_gift: { duration: 8000, sound: 'gift.mp3' },
-    cheer: { duration: 6000, sound: 'cheer.mp3' },
-    raid: { duration: 10000, sound: 'raid.mp3' },
-    donation: { duration: 8000, sound: 'donation.mp3' }
+  // Kein "sound" mehr – stattdessen "video" mit eingebettetem Audio
+  private alertConfigs: Record<AlertData['type'], { duration: number; video: string }> = {
+    follow: { duration: 6000, video: followerVideoUrl },
+    subscribe: { duration: 8000, video: subscriberVideoUrl },
+    sub_gift: { duration: 8000, video: subscriberVideoUrl },
+    cheer: { duration: 6000, video: donationVideoUrl },
+    raid: { duration: 10000, video: raidVideoUrl },
+    donation: { duration: 8000, video: donationVideoUrl }
   };
 
   constructor() {
     this.container = document.getElementById('alert-container')!;
     this.connect();
-    
     if (window.location.search.includes('debug')) {
       document.getElementById('debug-info')!.style.display = 'block';
     }
@@ -46,7 +53,6 @@ class AlertOverlay {
   private connect(): void {
     const wsUrl = this.getWebSocketUrl();
     console.log('Connecting to:', wsUrl);
-    
     this.ws = new WebSocket(wsUrl);
     this.updateStatus('Connecting...');
 
@@ -81,7 +87,7 @@ class AlertOverlay {
     const isLocal = window.location.hostname === 'localhost';
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = isLocal ? 'localhost:3000' : window.location.host;
-    return protocol + '//' + host + '/ws';
+    return `${protocol}//${host}/ws`;
   }
 
   private attemptReconnect(): void {
@@ -90,11 +96,9 @@ class AlertOverlay {
       this.updateStatus('Failed');
       return;
     }
-
     this.reconnectAttempts++;
-    console.log('Reconnecting... (attempt ' + this.reconnectAttempts + '/' + this.maxReconnectAttempts + ')');
-    this.updateStatus('Reconnecting (' + this.reconnectAttempts + ')...');
-    
+    console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    this.updateStatus(`Reconnecting (${this.reconnectAttempts})...`);
     setTimeout(() => this.connect(), this.reconnectDelay);
   }
 
@@ -103,16 +107,16 @@ class AlertOverlay {
     if (el) el.textContent = status;
   }
 
-  private handleMessage(eventType: string, data: any): void {
+  private handleMessage(eventType: string, data: unknown): void {
     switch (eventType) {
       case 'connection:established':
-        console.log('Client ID:', data.clientId);
+        console.log('Client ID:', (data as { clientId: string }).clientId);
         break;
       case 'alert:trigger':
         this.handleAlert(data as AlertData);
         break;
       case 'alert:queue':
-        console.log('Queue updated:', data);
+        console.log('Queue:', data);
         break;
     }
   }
@@ -122,9 +126,7 @@ class AlertOverlay {
       this.alertQueue.push(alert);
       return;
     }
-
     await this.showAlert(alert);
-
     if (this.alertQueue.length > 0) {
       const next = this.alertQueue.shift();
       if (next) setTimeout(() => this.showAlert(next), 500);
@@ -134,113 +136,99 @@ class AlertOverlay {
   private async showAlert(alert: AlertData): Promise<void> {
     this.isPlaying = true;
     const config = this.alertConfigs[alert.type];
-
-    const el = this.createAlertElement(alert);
+    const el = this.createAlertElement(alert, config.video);
     this.container.appendChild(el);
-
     el.classList.add('animate-in');
-    this.playSound(config.sound);
 
-    await this.sleep(config.duration);
+    // Warte bis Video fertig ist (oder Timeout)
+    const videoEl = el.querySelector<HTMLVideoElement>('video');
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, config.duration);
+      if (videoEl) {
+        videoEl.addEventListener('ended', () => {
+          clearTimeout(timer);
+          resolve();
+        });
+        videoEl.play().catch(() => {
+          // Autoplay blockiert – Timer übernimmt
+        });
+      }
+    });
 
     el.classList.remove('animate-in');
     el.classList.add('animate-out');
-
     await this.sleep(500);
     el.remove();
-
     this.isPlaying = false;
-    
-    this.ws?.send(JSON.stringify({ 
-      event: 'alert:complete', 
-      data: alert.id 
+
+    this.ws?.send(JSON.stringify({
+      event: 'alert:complete',
+      data: alert.id
     }));
   }
 
-  private createAlertElement(alert: AlertData): HTMLElement {
-    const div = document.createElement('div');
-    div.className = 'alert alert-' + alert.type;
-    div.innerHTML = this.getAlertHTML(alert);
-    return div;
+  private createAlertElement(alert: AlertData, videoUrl: string): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.className = `alert alert-${alert.type}`;
+
+    // Video-Element (enthält das eingebettete Audio)
+    const video = document.createElement('video');
+    video.src = videoUrl;
+    video.autoplay = true;
+    video.muted = false;      // Audio des Videos abspielen
+    video.playsInline = true;
+    video.className = 'alert-video';
+
+    // Text-Overlay unter dem Video
+    const textDiv = document.createElement('div');
+    textDiv.className = 'alert-text';
+    textDiv.innerHTML = this.getAlertHTML(alert);
+
+    wrapper.appendChild(video);
+    wrapper.appendChild(textDiv);
+    return wrapper;
   }
 
   private getAlertHTML(alert: AlertData): string {
     const templates: Record<AlertData['type'], string> = {
       follow: `
-        <div class="alert-box">
-          <div class="alert-icon">❤️</div>
-          <div class="alert-content">
-            <div class="alert-title">Neuer Follower!</div>
-            <div class="alert-user">${alert.user.displayName}</div>
-            <div class="alert-message">Willkommen!</div>
-          </div>
-        </div>
-      `,
+        <span class="alert-icon">❤️</span>
+        <p class="alert-type">Neuer Follower!</p>
+        <h1>${alert.user.displayName}</h1>
+        <p>Willkommen!</p>`,
       subscribe: `
-        <div class="alert-box">
-          <div class="alert-icon">⭐</div>
-          <div class="alert-content">
-            <div class="alert-title">Neuer Subscriber!</div>
-            <div class="alert-user">${alert.user.displayName}</div>
-            <div class="alert-tier">Tier ${this.formatTier(alert.tier)}</div>
-          </div>
-        </div>
-      `,
+        <span class="alert-icon">⭐</span>
+        <p class="alert-type">Neuer Subscriber!</p>
+        <h1>${alert.user.displayName}</h1>
+        <p>Tier ${this.formatTier(alert.tier)}</p>`,
       sub_gift: `
-        <div class="alert-box">
-          <div class="alert-icon">🎁</div>
-          <div class="alert-content">
-            <div class="alert-title">Gift Subs!</div>
-            <div class="alert-user">${alert.user.displayName}</div>
-            <div class="alert-amount">${alert.amount} Subs geschenkt!</div>
-          </div>
-        </div>
-      `,
+        <span class="alert-icon">🎁</span>
+        <p class="alert-type">Gift Subs!</p>
+        <h1>${alert.user.displayName}</h1>
+        <p>${alert.amount} Subs verschenkt!</p>`,
       cheer: `
-        <div class="alert-box">
-          <div class="alert-icon">💎</div>
-          <div class="alert-content">
-            <div class="alert-title">${alert.amount} Bits!</div>
-            <div class="alert-user">${alert.user.displayName}</div>
-            ${alert.message ? '<div class="alert-message">"' + alert.message + '"</div>' : ''}
-          </div>
-        </div>
-      `,
+        <span class="alert-icon">💎</span>
+        <p class="alert-type">${alert.amount} Bits!</p>
+        <h1>${alert.user.displayName}</h1>
+        ${alert.message ? `<p>"${alert.message}"</p>` : ''}`,
       raid: `
-        <div class="alert-box raid">
-          <div class="alert-icon">🚀</div>
-          <div class="alert-content">
-            <div class="alert-title">RAID!</div>
-            <div class="alert-user">${alert.user.displayName}</div>
-            <div class="alert-viewers">${alert.viewers} Zuschauer!</div>
-          </div>
-        </div>
-      `,
+        <span class="alert-icon">🚀</span>
+        <p class="alert-type">RAID!</p>
+        <h1>${alert.user.displayName}</h1>
+        <p>${alert.viewers} Zuschauer!</p>`,
       donation: `
-        <div class="alert-box donation">
-          <div class="alert-icon">💰</div>
-          <div class="alert-content">
-            <div class="alert-title">Trinkgeld!</div>
-            <div class="alert-user">${alert.user.displayName}</div>
-            <div class="alert-amount">${alert.amount} ${alert.metadata?.currency || 'EUR'}</div>
-            ${alert.message ? '<div class="alert-message">"' + alert.message + '"</div>' : ''}
-          </div>
-        </div>
-      `
+        <span class="alert-icon">💰</span>
+        <p class="alert-type">Trinkgeld!</p>
+        <h1>${alert.user.displayName}</h1>
+        <p>${alert.amount} ${(alert.metadata?.currency as string) || 'EUR'}</p>
+        ${alert.message ? `<p>"${alert.message}"</p>` : ''}`
     };
-
-    return templates[alert.type] || templates.follow;
+    return templates[alert.type] ?? templates.follow;
   }
 
   private formatTier(tier?: string): string {
-    const tiers: Record<string, string> = { '1000': '1', '2000': '2', '3000': '3' };
-    return tiers[tier || ''] || '1';
-  }
-
-  private playSound(soundFile: string): void {
-    const audio = new Audio('/assets/sounds/' + soundFile);
-    audio.volume = 0.5;
-    audio.play().catch(e => console.warn('Sound play failed:', e));
+    const map: Record<string, string> = { '1000': '1', '2000': '2', '3000': '3' };
+    return map[tier ?? ''] ?? '1';
   }
 
   private sleep(ms: number): Promise<void> {
