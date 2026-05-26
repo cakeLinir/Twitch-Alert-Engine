@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinkgeld für hundekuchenlive</title>
+    <link rel="stylesheet" href="./src/styles/donation.css">
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+
+<body>
+    <div class="donation-container">
+        <header class="donation-header">
+            <div class="streamer-avatar">
+                <img src="https://static-cdn.jtvnw.net/user-default-pictures-uv/998f01ae-def8-11e9-b95c-784f43822e80-profile_image-300x300.png"
+                    alt="hundekuchenlive">
+            </div>
+            <h1>Unterstütze hundekuchenlive</h1>
+            <p class="subtitle">Deine Unterstützung hilft mir, bessere Streams zu machen! 🐕🧁</p>
+        </header>
+
+        <form id="donation-form" class="donation-form">
+            <!-- Betrag wählen -->
+            <section class="amount-section">
+                <label>Summe wählen</label>
+                <div class="amount-presets">
+                    <button type="button" class="amount-btn" data-amount="5">5€</button>
+                    <button type="button" class="amount-btn" data-amount="10">10€</button>
+                    <button type="button" class="amount-btn selected" data-amount="25">25€</button>
+                    <button type="button" class="amount-btn" data-amount="50">50€</button>
+                    <button type="button" class="amount-btn custom" data-custom>Eigener Betrag</button>
+                </div>
+                <div class="custom-amount" style="display: none;">
+                    <input type="number" id="custom-amount" min="1" step="0.5" placeholder="Betrag in €">
+                </div>
+            </section>
+
+            <!-- Nachricht -->
+            <section class="message-section">
+                <label for="donor-name">Dein Name</label>
+                <input type="text" id="donor-name" placeholder="Anonym" maxlength="50">
+
+                <label for="donor-email">E-Mail (für Quittung)</label>
+                <input type="email" id="donor-email" placeholder="optional">
+
+                <label for="donor-message">Nachricht im Stream</label>
+                <textarea id="donor-message" maxlength="200" rows="3"
+                    placeholder="Deine Nachricht (optional, max. 200 Zeichen)..."></textarea>
+                <div class="char-count"><span id="char-count">0</span>/200</div>
+
+                <label class="checkbox">
+                    <input type="checkbox" id="anonymous">
+                    <span>Anonym spenden</span>
+                </label>
+            </section>
+
+            <!-- Zahlungsmethode -->
+            <section class="payment-section">
+                <label>Zahlungsmethode</label>
+                <div class="payment-methods">
+                    <button type="button" class="payment-btn selected" data-method="stripe">
+                        <span class="icon">💳</span>
+                        <span>Karte / Apple Pay / Google Pay</span>
+                    </button>
+                    <button type="button" class="payment-btn" data-method="paypal">
+                        <span class="icon">🅿️</span>
+                        <span>PayPal</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Stripe Card Element -->
+            <div id="card-element" class="card-element">
+                <!-- Stripe injects card input here -->
+            </div>
+            <div id="card-errors" class="card-errors" role="alert"></div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submit-btn" class="submit-btn" disabled>
+                <span class="btn-text">Jetzt unterstützen</span>
+                <span class="btn-amount">25 €</span>
+            </button>
+
+            <!-- Security Badges -->
+            <div class="security-badges">
+                <span>🔒 SSL Verschlüsselt</span>
+                <span>✅ Sichere Zahlung</span>
+            </div>
+        </form>
+
+        <!-- Success Message -->
+        <div id="success-message" class="success-message" style="display: none;">
+            <div class="success-icon">🎉</div>
+            <h2>Vielen Dank!</h2>
+            <p>Deine Unterstützung bedeutet mir sehr viel!</p>
+            <p class="redirect">Du kannst dieses Fenster jetzt schließen.</p>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+</body>
+
+</html>

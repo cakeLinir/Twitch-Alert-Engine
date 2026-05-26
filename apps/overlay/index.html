@@ -1,15 +1,20 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hundekuchenlive Overlay</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Alert Overlay - hundekuchenlive</title>
+    <link rel="stylesheet" href="./src/styles/main.css">
 </head>
 
 <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="alert-container" class="alert-container"></div>
+
+    <!-- OBS Browser Source URL: http://localhost:3000/overlay -->
+    <!-- Oder direkt diese Datei im Dev-Modus -->
+
+    <script type="module" src="./src/main.ts"></script>
 </body>
 
 </html>

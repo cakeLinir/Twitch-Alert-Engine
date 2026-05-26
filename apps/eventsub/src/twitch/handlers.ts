@@ -1,6 +1,7 @@
 import { EventSubWsListener } from '@twurple/eventsub-ws';
 import { type AlertPayload } from '@hundekuchenlive/shared';
 import { WebSocketBroadcaster } from '../websocket/broadcaster.js';
+import { EventSubChannelSubscriptionMessageEvent } from '@twurple/eventsub-base';
 
 export class EventHandlers {
     constructor(
@@ -14,6 +15,7 @@ export class EventHandlers {
         this.registerSubscriptions();
         this.registerCheers();
         this.registerRaids();
+        this.registerResubs();
 
         console.log('[Twitch] Alle Event-Handler registriert');
     }
@@ -95,6 +97,23 @@ export class EventHandlers {
             };
 
             console.log(`[Twitch] Raid: ${e.raidingBroadcasterName} mit ${e.viewers} Viewern`);
+            this.broadcaster.broadcast('alert:trigger', alert);
+        });
+    }
+
+    private registerResubs(): void {
+        this.listener.onChannelResub(this.broadcasterId, (e) => {
+            const alert: AlertPayload = {
+                id: `resub-${e.userId}-${Date.now()}`,
+                timestamp: Date.now(),
+                type: 'channel.resub',
+                userName: e.userName,
+                userId: e.userId,
+                tier: e.tier as '1000' | '2000' | '3000',
+                isGift: e.isGift,
+            };
+
+            console.log(`[Twitch] Resub: ${e.userName} (Tier ${e.tier})`);
             this.broadcaster.broadcast('alert:trigger', alert);
         });
     }

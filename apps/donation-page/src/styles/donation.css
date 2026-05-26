@@ -1,0 +1,376 @@
+/* ============================================
+   DONATION PAGE - hundekuchenlive
+   ============================================ */
+
+:root {
+    --twitch-purple: #9147ff;
+    --twitch-purple-dark: #772ce8;
+    --bg-dark: #0e0e10;
+    --bg-card: #1f1f23;
+    --text-primary: #efeff1;
+    --text-secondary: #adadb8;
+    --success: #00d4aa;
+    --error: #ef4444;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.donation-container {
+    background: var(--bg-card);
+    border-radius: 24px;
+    padding: 48px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+.donation-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.streamer-avatar {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--twitch-purple);
+    box-shadow: 0 0 30px rgba(145, 71, 255, 0.4);
+}
+
+.streamer-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+h1 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--text-primary), var(--twitch-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Form Sections */
+section {
+    margin-bottom: 28px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Amount Buttons */
+.amount-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.amount-btn {
+    padding: 16px;
+    border: 2px solid #3d3d44;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.amount-btn:hover {
+    border-color: var(--twitch-purple);
+    background: rgba(145, 71, 255, 0.1);
+}
+
+.amount-btn.selected {
+    border-color: var(--twitch-purple);
+    background: var(--twitch-purple);
+    color: white;
+}
+
+.amount-btn.custom {
+    grid-column: span 3;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.custom-amount {
+    margin-top: 12px;
+}
+
+.custom-amount input {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid #3d3d44;
+    border-radius: 12px;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.custom-amount input:focus {
+    outline: none;
+    border-color: var(--twitch-purple);
+}
+
+/* Inputs */
+input[type="text"],
+input[type="email"],
+textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #3d3d44;
+    border-radius: 12px;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-size: 15px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--twitch-purple);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: -12px;
+    margin-bottom: 12px;
+}
+
+/* Checkbox */
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    text-transform: none;
+}
+
+.checkbox input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--twitch-purple);
+    cursor: pointer;
+}
+
+/* Payment Methods */
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.payment-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border: 2px solid #3d3d44;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.payment-btn .icon {
+    font-size: 24px;
+}
+
+.payment-btn span:last-child {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.payment-btn:hover {
+    border-color: var(--twitch-purple);
+}
+
+.payment-btn.selected {
+    border-color: var(--twitch-purple);
+    background: rgba(145, 71, 255, 0.1);
+}
+
+/* Card Element */
+.card-element {
+    background: var(--bg-dark);
+    padding: 16px;
+    border-radius: 12px;
+    border: 2px solid #3d3d44;
+    margin: 16px 0;
+}
+
+.card-errors {
+    color: var(--error);
+    font-size: 14px;
+    margin-bottom: 16px;
+    min-height: 20px;
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 18px 32px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--twitch-purple), var(--twitch-purple-dark));
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(145, 71, 255, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.submit-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 100%;
+    }
+}
+
+.btn-amount {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+/* Security Badges */
+.security-badges {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Success Message */
+.success-message {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.success-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: bounce 1s ease infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.success-message h2 {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.success-message p {
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.success-message .redirect {
+    font-size: 14px;
+    margin-top: 20px;
+    opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .donation-container {
+        padding: 32px 24px;
+    }
+
+    .amount-presets {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .amount-btn.custom {
+        grid-column: span 2;
+    }
+}
