@@ -1,29 +1,36 @@
-import type { DonationPageConfig } from '@twitch-alert/types';
+import './styles/donation.css';
+
+declare const Stripe: any;
+declare const paypal: any;
 
 class DonationPage {
-    private stripe: Stripe | null = null;
-    private cardElement: StripeCardElement | null = null;
+    private stripe: ReturnType<typeof Stripe> | null = null;
+    private cardElement: any = null;
     private selectedAmount = 25;
     private selectedMethod: 'stripe' | 'paypal' = 'stripe';
     private isCustomAmount = false;
-    private config: DonationPageConfig | null = null;
+    private paypalRendered = false;
 
-    private elements = {
+    private el = {
         form: document.getElementById('donation-form') as HTMLFormElement,
         amountBtns: document.querySelectorAll('.amount-btn') as NodeListOf<HTMLButtonElement>,
         customAmountInput: document.getElementById('custom-amount') as HTMLInputElement,
-        customAmountContainer: document.querySelector('.custom-amount') as HTMLDivElement,
+        customAmountWrap: document.querySelector('.custom-amount') as HTMLDivElement,
         donorName: document.getElementById('donor-name') as HTMLInputElement,
         donorEmail: document.getElementById('donor-email') as HTMLInputElement,
         donorMessage: document.getElementById('donor-message') as HTMLTextAreaElement,
         charCount: document.getElementById('char-count') as HTMLSpanElement,
         anonymous: document.getElementById('anonymous') as HTMLInputElement,
         paymentBtns: document.querySelectorAll('.payment-btn') as NodeListOf<HTMLButtonElement>,
+        stripeSection: document.getElementById('stripe-section') as HTMLDivElement,
+        paypalSection: document.getElementById('paypal-section') as HTMLDivElement,
         cardElement: document.getElementById('card-element') as HTMLDivElement,
         cardErrors: document.getElementById('card-errors') as HTMLDivElement,
+        cardErrorsPaypal: document.getElementById('card-errors-paypal') as HTMLDivElement,
         submitBtn: document.getElementById('submit-btn') as HTMLButtonElement,
         btnAmount: document.querySelector('.btn-amount') as HTMLSpanElement,
-        successMessage: document.getElementById('success-message') as HTMLDivElement
+        successMessage: document.getElementById('success-message') as HTMLDivElement,
+        paypalContainer: document.getElementById('paypal-button-container') as HTMLDivElement,
     };
 
     constructor() {
@@ -31,62 +38,46 @@ class DonationPage {
     }
 
     private async init(): Promise<void> {
-        await this.loadConfig();
         this.setupEventListeners();
-        this.initStripe();
+        await this.initStripe();
     }
 
-    private async loadConfig(): Promise<void> {
-        try {
-            const response = await fetch('/api/donations/config');
-            const result = await response.json();
-            if (result.success) {
-                this.config = result.data;
-            }
-        } catch (error) {
-            console.error('Failed to load config:', error);
-        }
-    }
+    // ─── Event Listeners ──────────────────────────────────────────────────────
 
     private setupEventListeners(): void {
-        // Betrag-Buttons
-        this.elements.amountBtns.forEach(btn => {
-            btn.addEventListener('click', () => this.handleAmountSelect(btn));
-        });
+        this.el.amountBtns.forEach(btn =>
+            btn.addEventListener('click', () => this.handleAmountSelect(btn))
+        );
 
-        // Custom Amount
-        this.elements.customAmountInput.addEventListener('input', () => {
-            this.selectedAmount = parseFloat(this.elements.customAmountInput.value) || 0;
+        this.el.customAmountInput.addEventListener('input', () => {
+            this.selectedAmount = parseFloat(this.el.customAmountInput.value) || 0;
             this.updateSubmitButton();
         });
 
-        // Zahlungsmethoden
-        this.elements.paymentBtns.forEach(btn => {
-            btn.addEventListener('click', () => this.handlePaymentMethodSelect(btn));
+        this.el.paymentBtns.forEach(btn =>
+            btn.addEventListener('click', () => this.handlePaymentMethodSelect(btn))
+        );
+
+        this.el.donorMessage.addEventListener('input', () => {
+            this.el.charCount.textContent = this.el.donorMessage.value.length.toString();
         });
 
-        // Zeichenzähler
-        this.elements.donorMessage.addEventListener('input', () => {
-            const length = this.elements.donorMessage.value.length;
-            this.elements.charCount.textContent = length.toString();
-        });
-
-        // Form Submit
-        this.elements.form.addEventListener('submit', (e) => {
+        this.el.form.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.handleSubmit();
+            this.handleStripeSubmit();
         });
     }
 
-    private async initStripe(): Promise<void> {
-        const publishableKey = await this.getStripeKey();
+    // ─── Stripe ───────────────────────────────────────────────────────────────
 
-        if (!publishableKey) {
-            this.showError('Zahlungssystem nicht verfügbar');
+    private async initStripe(): Promise<void> {
+        const key = await this.getStripeKey();
+        if (!key) {
+            this.showError('Zahlungssystem nicht verfügbar', 'stripe');
             return;
         }
 
-        this.stripe = Stripe(publishableKey);
+        this.stripe = Stripe(key);
         const elements = this.stripe.elements({
             appearance: {
                 theme: 'night',
@@ -110,11 +101,10 @@ class DonationPage {
             }
         });
 
-        this.cardElement.mount(this.elements.cardElement);
-
-        this.cardElement.on('change', (event) => {
-            this.elements.cardErrors.textContent = event.error?.message || '';
-            this.elements.submitBtn.disabled = !event.complete || this.selectedAmount < 1;
+        this.cardElement.mount(this.el.cardElement);
+        this.cardElement.on('change', (event: any) => {
+            this.el.cardErrors.textContent = event.error?.message || '';
+            this.el.submitBtn.disabled = !event.complete || this.selectedAmount < 1;
         });
 
         this.updateSubmitButton();
@@ -122,189 +112,223 @@ class DonationPage {
 
     private async getStripeKey(): Promise<string | null> {
         try {
-            // In Produktion: Endpoint erstellen oder in HTML rendern
-            return 'pk_test_...'; // TEST KEY - Ersetzen!
+            const res = await fetch('/api/donations/stripe-key');
+            const data = await res.json();
+            return data.success ? data.publishableKey : null;
         } catch {
             return null;
         }
     }
 
+    private async handleStripeSubmit(): Promise<void> {
+        if (!this.stripe || !this.cardElement) return;
+
+        const amount = this.getSelectedAmount();
+        if (amount < 1) {
+            this.showError('Mindestbetrag ist 1 €', 'stripe');
+            return;
+        }
+
+        this.setLoading(true);
+
+        try {
+            const res = await fetch('/api/donations/create-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.buildDonationPayload(amount))
+            });
+
+            const result = await res.json();
+            if (!result.success) throw new Error(result.error);
+
+            const { error, paymentIntent } = await this.stripe.confirmCardPayment(
+                result.data.clientSecret,
+                {
+                    payment_method: {
+                        card: this.cardElement,
+                        billing_details: {
+                            name: this.el.anonymous.checked ? 'Anonymous' : this.el.donorName.value || 'Anonymous',
+                            email: this.el.donorEmail.value || undefined
+                        }
+                    }
+                }
+            );
+
+            if (error) throw new Error(error.message);
+            if (paymentIntent?.status === 'succeeded') this.showSuccess();
+
+        } catch (err) {
+            this.showError((err as Error).message || 'Zahlung fehlgeschlagen', 'stripe');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    // ─── PayPal ───────────────────────────────────────────────────────────────
+
+    private async initPayPal(): Promise<void> {
+        if (this.paypalRendered) {
+            // Buttons bereits gerendert — nur Betrag hat sich evtl. geändert
+            // PayPal Buttons neu rendern wenn Betrag sich geändert hat
+            this.el.paypalContainer.innerHTML = '';
+            this.paypalRendered = false;
+        }
+
+        if (typeof paypal === 'undefined') {
+            await this.loadPayPalScript();
+        }
+
+        const amount = this.getSelectedAmount();
+
+        paypal.Buttons({
+            style: {
+                layout: 'vertical',
+                color: 'blue',
+                shape: 'rect',
+                label: 'pay'
+            },
+
+            // Order erstellen
+            createOrder: async () => {
+                const res = await fetch('/api/donations/paypal/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.buildDonationPayload(amount))
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+                return data.orderId;
+            },
+
+            // Zahlung abgeschlossen
+            onApprove: async (data: { orderID: string }) => {
+                try {
+                    const res = await fetch('/api/donations/paypal/capture', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: data.orderID })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        this.showSuccess();
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (err) {
+                    this.showError((err as Error).message || 'PayPal Fehler', 'paypal');
+                }
+            },
+
+            onError: (err: Error) => {
+                this.showError('PayPal Fehler: ' + err.message, 'paypal');
+            },
+
+            onCancel: () => {
+                this.showError('Zahlung abgebrochen.', 'paypal');
+            }
+
+        }).render('#paypal-button-container');
+
+        this.paypalRendered = true;
+    }
+
+    private async loadPayPalScript(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Client ID vom Server holen
+                const res = await fetch('/api/donations/paypal-client-id');
+                const data = await res.json();
+                if (!data.success) throw new Error('PayPal nicht konfiguriert');
+
+                const script = document.createElement('script');
+                script.src = `https://www.paypal.com/sdk/js?client-id=${data.clientId}&currency=EUR&intent=capture`;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('PayPal SDK konnte nicht geladen werden'));
+                document.head.appendChild(script);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    // ─── UI Helpers ───────────────────────────────────────────────────────────
+
     private handleAmountSelect(btn: HTMLButtonElement): void {
-        // Remove selected from all
-        this.elements.amountBtns.forEach(b => b.classList.remove('selected'));
+        this.el.amountBtns.forEach(b => b.classList.remove('selected'));
 
         if (btn.dataset.custom !== undefined) {
             this.isCustomAmount = true;
-            this.elements.customAmountContainer.style.display = 'block';
-            this.elements.customAmountInput.focus();
-            btn.classList.add('selected');
+            this.el.customAmountWrap.style.display = 'block';
+            this.el.customAmountInput.focus();
         } else {
             this.isCustomAmount = false;
-            this.elements.customAmountContainer.style.display = 'none';
+            this.el.customAmountWrap.style.display = 'none';
             this.selectedAmount = parseInt(btn.dataset.amount || '5', 10);
-            btn.classList.add('selected');
-            this.elements.customAmountInput.value = '';
+            this.el.customAmountInput.value = '';
         }
 
+        btn.classList.add('selected');
         this.updateSubmitButton();
+
+        // PayPal Buttons bei Betragsänderung neu rendern
+        if (this.selectedMethod === 'paypal') {
+            this.initPayPal();
+        }
     }
 
     private handlePaymentMethodSelect(btn: HTMLButtonElement): void {
-        this.elements.paymentBtns.forEach(b => b.classList.remove('selected'));
+        this.el.paymentBtns.forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         this.selectedMethod = btn.dataset.method as 'stripe' | 'paypal';
 
-        // Toggle card element visibility
         if (this.selectedMethod === 'paypal') {
-            this.elements.cardElement.style.display = 'none';
-            this.elements.submitBtn.disabled = false;
+            this.el.stripeSection.style.display = 'none';
+            this.el.paypalSection.style.display = 'block';
+            this.initPayPal();
         } else {
-            this.elements.cardElement.style.display = 'block';
-            this.elements.submitBtn.disabled = !this.cardElement;
+            this.el.stripeSection.style.display = 'block';
+            this.el.paypalSection.style.display = 'none';
         }
     }
 
     private updateSubmitButton(): void {
-        const amount = this.isCustomAmount
-            ? parseFloat(this.elements.customAmountInput.value) || 0
-            : this.selectedAmount;
-
-        this.elements.btnAmount.textContent = `${amount.toFixed(2)} €`;
-        this.elements.submitBtn.disabled = amount < (this.config?.minAmount || 1);
+        const amount = this.getSelectedAmount();
+        this.el.btnAmount.textContent = `${amount.toFixed(2)} €`;
+        this.el.submitBtn.disabled = amount < 1;
     }
 
-    private async handleSubmit(): Promise<void> {
-        const amount = this.isCustomAmount
-            ? parseFloat(this.elements.customAmountInput.value)
+    private getSelectedAmount(): number {
+        return this.isCustomAmount
+            ? parseFloat(this.el.customAmountInput.value) || 0
             : this.selectedAmount;
+    }
 
-        if (amount < (this.config?.minAmount || 1)) {
-            this.showError(`Mindestbetrag: ${this.config?.minAmount || 1}€`);
-            return;
-        }
-
-        this.elements.submitBtn.disabled = true;
-        this.elements.submitBtn.classList.add('loading');
-
-        const donationData = {
+    private buildDonationPayload(amount: number) {
+        return {
             amount: Math.round(amount * 100), // Cent
-            currency: this.config?.currency || 'EUR',
-            donorName: this.elements.anonymous.checked
-                ? 'Anonymous'
-                : this.elements.donorName.value || 'Anonymous',
-            donorEmail: this.elements.donorEmail.value || undefined,
-            message: this.elements.donorMessage.value || undefined,
-            isAnonymous: this.elements.anonymous.checked
+            currency: 'EUR',
+            donorName: this.el.anonymous.checked ? 'Anonymous' : (this.el.donorName.value || 'Anonymous'),
+            donorEmail: this.el.donorEmail.value || undefined,
+            message: this.el.donorMessage.value || undefined,
+            isAnonymous: this.el.anonymous.checked
         };
-
-        try {
-            if (this.selectedMethod === 'stripe') {
-                await this.processStripePayment(donationData);
-            } else {
-                await this.processPayPalPayment(donationData);
-            }
-        } catch (error) {
-            this.showError('Zahlung fehlgeschlagen. Bitte versuche es erneut.');
-            console.error('Payment error:', error);
-        } finally {
-            this.elements.submitBtn.disabled = false;
-            this.elements.submitBtn.classList.remove('loading');
-        }
     }
 
-    private async processStripePayment(data: any): Promise<void> {
-        if (!this.stripe || !this.cardElement) {
-            throw new Error('Stripe not initialized');
-        }
-
-        // 1. Payment Intent am Server erstellen
-        const response = await fetch('/api/donations/create-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to create payment intent');
-        }
-
-        // 2. Zahlung bestätigen
-        const { error, paymentIntent } = await this.stripe.confirmCardPayment(
-            result.data.clientSecret,
-            {
-                payment_method: {
-                    card: this.cardElement,
-                    billing_details: {
-                        name: data.donorName,
-                        email: data.donorEmail
-                    }
-                }
-            }
-        );
-
-        if (error) {
-            throw new Error(error.message);
-        }
-
-        if (paymentIntent.status === 'succeeded') {
-            this.showSuccess();
-        }
-    }
-
-    private async processPayPalPayment(data: any): Promise<void> {
-        // PayPal Checkout
-        const response = await fetch('/api/donations/paypal/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (!result.success) {
-            throw new Error(result.error);
-        }
-
-        // PayPal SDK öffnen
-        // @ts-ignore
-        paypal.Buttons({
-            createOrder: () => result.data.orderId,
-            onApprove: async (data: any, actions: any) => {
-                // Capture the order
-                const captureResponse = await fetch('/api/donations/paypal/capture', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId: data.orderID })
-                });
-
-                const captureResult = await captureResponse.json();
-
-                if (captureResult.success) {
-                    this.showSuccess();
-                }
-            }
-        }).render('#paypal-button-container');
-
-        // Alternative: Redirect zu PayPal
-        window.location.href = result.data.approveUrl;
+    private setLoading(loading: boolean): void {
+        this.el.submitBtn.disabled = loading;
+        this.el.submitBtn.classList.toggle('loading', loading);
     }
 
     private showSuccess(): void {
-        this.elements.form.style.display = 'none';
-        this.elements.successMessage.style.display = 'block';
+        this.el.form.style.display = 'none';
+        this.el.successMessage.style.display = 'block';
     }
 
-    private showError(message: string): void {
-        this.elements.cardErrors.textContent = message;
-        setTimeout(() => {
-            this.elements.cardErrors.textContent = '';
-        }, 5000);
+    private showError(message: string, target: 'stripe' | 'paypal' = 'stripe'): void {
+        const el = target === 'paypal' ? this.el.cardErrorsPaypal : this.el.cardErrors;
+        el.textContent = message;
+        setTimeout(() => { el.textContent = ''; }, 6000);
     }
 }
 
-// Initialisieren
-document.addEventListener('DOMContentLoaded', () => {
-    new DonationPage();
-});
+document.addEventListener('DOMContentLoaded', () => new DonationPage());

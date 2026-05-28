@@ -6,23 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trinkgeld für hundekuchenlive</title>
     <link rel="stylesheet" href="./src/styles/donation.css">
-    <!-- Stripe.js -->
+    <!-- Stripe JS -->
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body>
     <div class="donation-container">
+
         <header class="donation-header">
             <div class="streamer-avatar">
                 <img src="https://static-cdn.jtvnw.net/user-default-pictures-uv/998f01ae-def8-11e9-b95c-784f43822e80-profile_image-300x300.png"
                     alt="hundekuchenlive">
             </div>
             <h1>Unterstütze hundekuchenlive</h1>
-            <p class="subtitle">Deine Unterstützung hilft mir, bessere Streams zu machen! 🐕🧁</p>
+            <p class="subtitle">Deine Unterstützung hilft mir, bessere Streams zu machen! 🐕🍞</p>
         </header>
 
         <form id="donation-form" class="donation-form">
-            <!-- Betrag wählen -->
+
+            <!-- Betrag -->
             <section class="amount-section">
                 <label>Summe wählen</label>
                 <div class="amount-presets">
@@ -33,16 +35,16 @@
                     <button type="button" class="amount-btn custom" data-custom>Eigener Betrag</button>
                 </div>
                 <div class="custom-amount" style="display: none;">
-                    <input type="number" id="custom-amount" min="1" step="0.5" placeholder="Betrag in €">
+                    <input type="number" id="custom-amount" min="1" step="0.50" placeholder="Betrag in €">
                 </div>
             </section>
 
-            <!-- Nachricht -->
+            <!-- Infos -->
             <section class="message-section">
                 <label for="donor-name">Dein Name</label>
                 <input type="text" id="donor-name" placeholder="Anonym" maxlength="50">
 
-                <label for="donor-email">E-Mail (für Quittung)</label>
+                <label for="donor-email">E-Mail (optional)</label>
                 <input type="email" id="donor-email" placeholder="optional">
 
                 <label for="donor-message">Nachricht im Stream</label>
@@ -52,7 +54,7 @@
 
                 <label class="checkbox">
                     <input type="checkbox" id="anonymous">
-                    <span>Anonym spenden</span>
+                    <span>Anonym senden</span>
                 </label>
             </section>
 
@@ -72,31 +74,37 @@
             </section>
 
             <!-- Stripe Card Element -->
-            <div id="card-element" class="card-element">
-                <!-- Stripe injects card input here -->
+            <div id="stripe-section">
+                <div id="card-element" class="card-element"></div>
+                <div id="card-errors" class="card-errors" role="alert"></div>
+                <button type="submit" id="submit-btn" class="submit-btn" disabled>
+                    <span class="btn-text">Jetzt unterstützen</span>
+                    <span class="btn-amount">25 €</span>
+                </button>
             </div>
-            <div id="card-errors" class="card-errors" role="alert"></div>
 
-            <!-- Submit Button -->
-            <button type="submit" id="submit-btn" class="submit-btn" disabled>
-                <span class="btn-text">Jetzt unterstützen</span>
-                <span class="btn-amount">25 €</span>
-            </button>
+            <!-- PayPal Button Container -->
+            <div id="paypal-section" style="display: none;">
+                <div id="card-errors-paypal" class="card-errors" role="alert"></div>
+                <div id="paypal-button-container" class="paypal-button-container"></div>
+            </div>
 
-            <!-- Security Badges -->
             <div class="security-badges">
                 <span>🔒 SSL Verschlüsselt</span>
                 <span>✅ Sichere Zahlung</span>
+                <span style="font-size:0.7rem; color: #888;">Kleinunternehmer gem. §19 UStG – keine MwSt.</span>
             </div>
+
         </form>
 
-        <!-- Success Message -->
+        <!-- Erfolg -->
         <div id="success-message" class="success-message" style="display: none;">
             <div class="success-icon">🎉</div>
             <h2>Vielen Dank!</h2>
             <p>Deine Unterstützung bedeutet mir sehr viel!</p>
             <p class="redirect">Du kannst dieses Fenster jetzt schließen.</p>
         </div>
+
     </div>
 
     <script type="module" src="./src/main.ts"></script>

@@ -1,0 +1,14 @@
+{
+    "name": "@twitch-alert/donation-page",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite --port 8082",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "vite": "^5.0.0",
+        "typescript": "^5.3.0"
+    }
+}
